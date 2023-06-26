@@ -1,1 +1,52 @@
-1. Написати unit-тести для функціональності, що зберігає та змінює нотатки.
+#Task : Написати unit-тести для функціональності, що зберігає та змінює нотатки.
+функціональність , що зберігає та змінює нотатки в аппці notes1 реалізована з допомогою функцій у файлі view: create_note view та note_detail view, відповідно.
+
+файл аппки з test.py в zip архіві в LMS + в репо.
+
+from django.test import TestCase
+from django.urls import reverse
+from django.contrib.auth.models import User
+from .models import Note, Category
+
+class NoteTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='testpassword')
+        self.category = Category.objects.create(title='Test Category')
+        self.note = Note.objects.create(
+            title='Test Note',
+            text='Test text',
+            reminder='2023-06-26',
+            category=self.category,
+        )
+
+    def test_create_note_view(self):
+        url = reverse('create_note')
+        form_data = {
+            'title': 'New Note',
+            'text': 'New text',
+            'reminder': '2023-06-27',
+            'category': 'New Category',
+        }
+        response = self.client.post(url, data=form_data)
+        self.assertEqual(response.status_code, 302)  # Redirects to note detail page
+        created_note = Note.objects.latest('id')
+        self.assertEqual(created_note.title, 'New Note')
+        self.assertEqual(created_note.text, 'New text')
+        self.assertEqual(created_note.reminder, '2023-06-27')
+        self.assertEqual(created_note.category.title, 'New Category')
+
+    def test_note_detail_view(self):
+        url = reverse('note_detail', args=[self.note.id])
+        form_data = {
+            'title': 'Updated Note',
+            'text': 'Updated text',
+            'reminder': '2023-06-28',
+            'category': 'Updated Category',
+        }
+        response = self.client.post(url, data=form_data)
+        self.assertEqual(response.status_code, 302)  # Redirects to note detail page
+        updated_note = Note.objects.get(id=self.note.id)
+        self.assertEqual(updated_note.title, 'Updated Note')
+        self.assertEqual(updated_note.text, 'Updated text')
+        self.assertEqual(updated_note.reminder, '2023-06-28')
+        self.assertEqual(updated_note.category.title, 'Updated Category')
